@@ -116,6 +116,11 @@ async function generateImage(prompt: string): Promise<string> {
           aspectRatio: '1:1',
         },
     });
+
+    if (!response.generatedImages || response.generatedImages.length === 0 || !response.generatedImages[0].image?.imageBytes) {
+        throw new Error("Image generation failed. The API did not return an image. This could be due to safety settings, rate limits, or other API issues.");
+    }
+    
     return response.generatedImages[0].image.imageBytes;
 }
 
@@ -163,6 +168,11 @@ export async function generateScreen(
         outputMimeType: 'image/png',
         aspectRatio: isLoFi ? '1:1' : '9:16',
       },
-  });
-  return response.generatedImages[0].image.imageBytes;
+    });
+
+    if (!response.generatedImages || response.generatedImages.length === 0 || !response.generatedImages[0].image?.imageBytes) {
+        throw new Error(`Screen generation for "${screenName}" failed. The API did not return an image. This could be due to safety settings, rate limits, or other API issues.`);
+    }
+
+    return response.generatedImages[0].image.imageBytes;
 }
