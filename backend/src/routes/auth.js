@@ -69,7 +69,7 @@ router.post('/register', async (req, res) => {
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ 
-      message: 'Server error during registration',
+      message: 'Server error during registration'
     });
   }
 });
@@ -88,15 +88,18 @@ router.post('/login', async (req, res) => {
 
     // Find user
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ 
-        message: 'Invalid credentials' 
-      });
+
+    // Timing attack protection - always run bcrypt.compare
+    let isPasswordValid = false;
+    if (user) {
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    } else {
+      const dummyHash = '$2a$12$dummyHashThatWillNeverMatch.xxxxxxxxxxxxxxxxxxxxx';
+      await bcrypt.compare(password, dummyHash);
     }
 
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    // Check if authentication failed
+    if (!user || !isPasswordValid) {
       return res.status(400).json({ 
         message: 'Invalid credentials' 
       });
@@ -105,7 +108,7 @@ router.post('/login', async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET || 'fallback_secret',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -125,29 +128,9 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ 
-      message: 'Server error during login',
-      error: error.message 
+      message: 'Server error during login'
     });
   }
 });
 
 module.exports = router;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
