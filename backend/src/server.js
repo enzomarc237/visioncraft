@@ -5,6 +5,15 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
+if (!process.env.JWT_SECRET) {
+  console.error('ERROR: JWT_SECRET environment variable is required');
+  process.exit(1); 
+}
+
+if (!process.env.MONGODB_URI) {
+  console.warn('WARNING: MONGODB_URI not set, using local MongoDB');
+}
+
 const app = express();
 const port = process.env.PORT || 3000;
 
