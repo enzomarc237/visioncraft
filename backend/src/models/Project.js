@@ -80,10 +80,6 @@ const projectSchema = new Schema({
     type: Boolean,
     default: true
   },
-  lastModified: {
-    type: Date,
-    default: Date.now
-  }
 }, {
   timestamps: true // Adds createdAt and updatedAt automatically
 });
