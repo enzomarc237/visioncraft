@@ -5,13 +5,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
+// Validate required environment variables
 if (!process.env.JWT_SECRET) {
-  console.error('ERROR: JWT_SECRET environment variable is required');
+  console.error('❌ ERROR: JWT_SECRET environment variable is required');
   process.exit(1); 
 }
 
 if (!process.env.MONGODB_URI) {
-  console.warn('WARNING: MONGODB_URI not set, using local MongoDB');
+  console.warn('⚠️ WARNING: MONGODB_URI not set, using local MongoDB');
 }
 
 const app = express();
@@ -43,16 +44,30 @@ app.get('/api/health', (req, res) => {
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/visioncraft')
-.then(() => console.log("MongoDB Connected Successfully"))
-.catch(err => console.error("MongoDB Connection Error:", err));
+.then(() => console.log("✅ MongoDB Connected Successfully"))
+.catch(err => console.error("❌ MongoDB Connection Error:", err));
 
-// Error handling for unhandled promises
-process.on('unhandledRejection', (err) => {
-  console.log('UNHANDLED REJECTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
-  process.exit(1);
+// Start server with graceful shutdown handling
+const server = app.listen(port, () => {
+  console.log(`🚀 Server running on http://localhost:${port}/`);
 });
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}/`);
+// Graceful shutdown for unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.log('❌ UNHANDLED REJECTION! Shutting down gracefully...');
+  console.log(err.name, err.message);
+  
+  // Close server first, then exit process
+  server.close(() => {
+    console.log('💥 Process terminated due to unhandled promise rejection');
+    process.exit(1);
+  });
+});
+
+// Graceful shutdown for SIGTERM (Docker, Kubernetes, etc.)
+process.on('SIGTERM', () => {
+  console.log('👋 SIGTERM RECEIVED. Shutting down gracefully...');
+  server.close(() => {
+    console.log('💥 Process terminated');
+  });
 });
